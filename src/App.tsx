@@ -387,13 +387,25 @@ function DHClient() {
             }
             {
                 secretMsg &&
-                <div className="alert alert-info my-3 shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <div>
-                        <h3 className="font-bold">会话秘钥: (server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)</h3>
-                        <div className="text-xs">{ secretMsg }</div>
+                <>
+                    <div className="alert alert-info my-3 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div>
+                            <h3 className="font-bold">会话秘钥: (server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)</h3>
+                            <div className="text-xs">{ secretMsg }</div>
+                        </div>
                     </div>
-                </div>
+                    <div className="alert alert-info my-3 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div>
+                            <h3 className="font-bold">中间数据:</h3>
+                            <div className="text-xs">p: { p.toString() }</div>
+                            <div className="text-xs">g: { g.toString() }</div>
+                            <div className="text-xs">Client 公钥: { pbk1.toString() }</div>
+                            <div className="text-xs">Client 私钥: { pvk1.toString() }</div>
+                        </div>
+                    </div>
+                </>
             }
         </div>
     )
