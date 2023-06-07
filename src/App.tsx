@@ -94,7 +94,7 @@ function DHDemo() {
                     'flex flex-col items-center justify-center break-all grow',
                 ) }>
                     <div className={ clsx(
-                        'card  bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-72',
+                        'card  bg-neutral-900 shadow-xl p-3 m-3 w-1/2 transition-all h-72',
                     ) }>
                         <div className="avatar placeholder">
                             <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
@@ -131,7 +131,7 @@ function DHDemo() {
                         'flex w-full',
                     ) }>
                         <div className={ clsx(
-                            'card bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
+                            'card bg-neutral-900 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
                         ) }>
                             <div className="avatar placeholder">
                                 <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
@@ -192,7 +192,7 @@ function DHDemo() {
                             }
                         </div>
                         <div className={ clsx(
-                            'card  bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
+                            'card  bg-neutral-900 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
                         ) }>
                             <div className="avatar placeholder">
                                 <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
