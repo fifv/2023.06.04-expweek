@@ -1,0 +1,47 @@
+{
+    "name": "react-vite-template",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "serve": "NODE_NO_WARNINGS=1; nodemon -x tsx ./src/server.ts"
+    },
+    "dependencies": {
+        "@types/body-parser": "^1.19.2",
+        "@types/cors": "^2.8.13",
+        "@types/crypto-js": "^4.1.1",
+        "@types/express": "^4.17.17",
+        "@types/node": "^20.2.5",
+        "body-parser": "^1.20.2",
+        "clsx": "^1.2.1",
+        "cors": "^2.8.5",
+        "crypto-js": "^4.1.1",
+        "daisyui": "^3.0.1",
+        "express": "^4.18.2",
+        "lodash": "^4.17.21",
+        "lodash-es": "^4.17.21",
+        "long": "^5.2.3",
+        "nodemon": "^2.0.22",
+        "postcss": "^8.4.21",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-flip-toolkit": "^7.1.0",
+        "tailwindcss": "^3.3.1"
+    },
+    "devDependencies": {
+        "@types/lodash-es": "^4.17.7",
+        "@types/react": "^18.0.31",
+        "@types/react-dom": "^18.0.11",
+        "@typescript-eslint/eslint-plugin": "^5.57.0",
+        "@typescript-eslint/parser": "^5.57.0",
+        "@vitejs/plugin-react-swc": "^3.2.0",
+        "autoprefixer": "^10.4.14",
+        "eslint": "^8.37.0",
+        "eslint-config-react-app": "^7.0.1",
+        "typescript": "^5.0.3",
+        "vite": "^4.2.1"
+    }
+}
