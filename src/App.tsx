@@ -323,40 +323,45 @@ function DHClient() {
                          * 
                          * 因为bigint不能被stringify,所以需要手动转成string,并在server端重新转换成bigint
                          */
-                        const dhResponse = await (await fetch(
-                            'http://localhost:30003/exchange',
-                            {
-                                method: 'POST',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    g: g.toString(),
-                                    hmacPbk1: hmacPbk1,
-                                    p: p.toString(),
-                                    pbk1: pbk1.toString(),
-                                } satisfies DHRequest)
+                        try {
+
+                            const dhResponse = await (await fetch(
+                                'http://localhost:30003/exchange',
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        g: g.toString(),
+                                        hmacPbk1: hmacPbk1,
+                                        p: p.toString(),
+                                        pbk1: pbk1.toString(),
+                                    } satisfies DHRequest)
+                                }
+                            )).json() as DHResponse
+
+                            const pbk2 = BigInt(dhResponse.pbk2)
+
+                            const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
+
+                            /**
+                             * 验证HMAC
+                             */
+                            if (hmacPbk2 === dhResponse.hmacPbk2) {
+                                const secret = quickMod(pbk2, pvk1, p).toString()
+                                setHmacPbk2Msg(hmacPbk2)
+                                setSecretMsg(secret)
+                                console.log('HMAC 验证成功,可以确保收到的server的公钥是正确的:', hmacPbk2)
+                                console.log('secret:', secret, '(server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)')
+                            } else {
+                                console.log('HMAC 验证失败!!!')
                             }
-                        )).json() as DHResponse
 
-                        const pbk2 = BigInt(dhResponse.pbk2)
-
-                        const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
-
-                        /**
-                         * 验证HMAC
-                         */
-                        if (hmacPbk2 === dhResponse.hmacPbk2) {
-                            const secret = quickMod(pbk2, pvk1, p).toString()
-                            setHmacPbk2Msg(hmacPbk2)
-                            setSecretMsg(secret)
-                            console.log('HMAC 验证成功,可以确保收到的server的公钥是正确的:', hmacPbk2)
-                            console.log('secret:', secret, '(server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)')
-                        } else {
-                            console.log('HMAC 验证失败!!!')
+                        } catch (error) {
+                            alert('连接失败!请确保打开Server!')
                         }
-
                     } }
                 >Diffie-Hellman Exchange</button>
             </div>
