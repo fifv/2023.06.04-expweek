@@ -19,6 +19,7 @@ export function quickMod(a: bigint, b: bigint, c: bigint): bigint {
 
 /**
  * 生成p
+ * 由于p是大家共享的,所以直接生成定值
  */
 export function generatePrime() {
     return 490366811208742240841899277683n

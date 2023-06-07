@@ -1,4 +1,3 @@
-import Long from "long"
 
 export interface DHRequest {
     pbk1: string 

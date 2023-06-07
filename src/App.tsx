@@ -1,18 +1,37 @@
 
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
 import { range } from 'lodash-es'
 import clsx from 'clsx'
 import { generatePrime, generatePrivateKey, generatePublicKey, quickMod } from './diffie-hellman'
-import Long from "long"
-import { hex, sign } from './hmac'
 import { Flipper, Flipped } from 'react-flip-toolkit'
 import CryptoJS from 'crypto-js'
 import { DHRequest, DHResponse } from './types'
 
 export default function App() {
-    const [step, setStep] = useState(11)
+    return (
+        <>
+            <div className="divider">C/S 结构秘钥交换, 请同时打开Server使用</div>
+            <DHClient></DHClient>
+            <div className="divider">秘钥交换演示</div>
+            <DHDemo></DHDemo>
+        </>
+    )
+}
+
+function DHDemo() {
+    /**
+     * 计算好所有需要的东西,根据step的不同展示不同的内容
+     * 
+     * 1. g
+     * 2. p
+     * 3. Alice的私钥
+     * 4. Alice的公钥(带hmac)
+     * 5. Bob的私钥
+     * 6. Bob的公钥(带hmac)
+     * 7. Alice算出的会话秘钥secret
+     * 8. Bob算出的会话秘钥secret
+     */
+    const [step, setStep] = useState(1)
     const [g, setG] = useState(2n)
     const [p, setP] = useState(generatePrime())
     const [pvk1, setPvk1] = useState(generatePrivateKey())
@@ -24,6 +43,12 @@ export default function App() {
     const hmacPbk1 = CryptoJS.HmacSHA256(pbk1.toString(), "Secret Passphrase")
     const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase")
 
+    const secret1 = quickMod(pbk1, pvk2, p).toString()
+    const secret2 = quickMod(pbk2, pvk1, p).toString()
+
+    /**
+     * 把重复的一些Element抽出来,降低代码重复
+     */
     function Pbk1({ isAbsolute, isShowHmac, ...rest }: { isAbsolute?: boolean, isShowHmac?: boolean }) {
         return (
             <div className={ clsx(
@@ -57,9 +82,11 @@ export default function App() {
         )
     }
 
+    /**
+     * 使用flip库实现一些小动画
+     */
     return (
         <Flipper flipKey={ step }>
-            <DHClient></DHClient>
             <div className={ clsx(
                 'flex h-screen ',
             ) }>
@@ -67,7 +94,7 @@ export default function App() {
                     'flex flex-col items-center justify-center break-all grow',
                 ) }>
                     <div className={ clsx(
-                        'card  bg-base-100 shadow-xl p-3 m-3 w-1/2 transition-all h-72',
+                        'card  bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-72',
                     ) }>
                         <div className="avatar placeholder">
                             <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
@@ -104,7 +131,7 @@ export default function App() {
                         'flex w-full',
                     ) }>
                         <div className={ clsx(
-                            'card bg-base-100 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
+                            'card bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
                         ) }>
                             <div className="avatar placeholder">
                                 <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
@@ -160,12 +187,12 @@ export default function App() {
                                 <div className={ clsx(
                                     step === 6 && 'font-bold text-blue-400',
                                 ) }>
-                                    Secret: { quickMod(pbk1, pvk2, p).toString() }
+                                    Secret: { secret1 }
                                 </div>
                             }
                         </div>
                         <div className={ clsx(
-                            'card  bg-base-100 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
+                            'card  bg-base-300 shadow-xl p-3 m-3 w-1/2 transition-all h-[24rem]',
                         ) }>
                             <div className="avatar placeholder">
                                 <div className="bg-neutral-focus text-neutral-content rounded-full w-24">
@@ -218,7 +245,7 @@ export default function App() {
                                 <div className={ clsx(
                                     step === 6 && 'font-bold text-blue-400',
                                 ) }>
-                                    Secret: { quickMod(pbk2, pvk1, p).toString() }
+                                    Secret: { secret2 }
                                 </div>
                             }
                         </div>
@@ -233,6 +260,9 @@ export default function App() {
                     <div className={ clsx(
                         'btn btn-warning m-3',
                     ) } onClick={ () => {
+                        /**
+                         * 重新生成两者的私钥
+                         */
                         setStep(1)
                         setPvk1(generatePrivateKey())
                         setPvk2(generatePrivateKey())
@@ -252,57 +282,114 @@ export default function App() {
             </div>
         </Flipper>
     )
+
 }
 
 function DHClient() {
+    /**
+     * client需要计算的东西:
+     * 1. g
+     * 2. p
+     * 3. client的私钥
+     * 4. client的公钥(带hmac)
+     */
     const [g, setG] = useState(2n)
     const [p, setP] = useState(generatePrime())
     const [pvk1, setPvk1] = useState(generatePrivateKey())
 
     const pbk1 = generatePublicKey(g, pvk1, p)
-
     const hmacPbk1 = CryptoJS.HmacSHA256(pbk1.toString(), "Secret Passphrase").toString()
 
+    /**
+     * 计算结果,计算的过程在下面的onClick handle中
+     */
+    const [hmacPbk2Msg, setHmacPbk2Msg] = useState<string | undefined>(undefined)
+    const [secretMsg, setSecretMsg] = useState<string>('')
+
     return (
-        <div>
-            <button
-                className={ clsx(
-                    'btn btn-primary',
-                ) }
-                onClick={ async (e) => {
-                    /**
-                     * 因为bigint不能被stringify,所以需要手动转成string,并在server端重新转换成bigint
-                     */
-                    const dhResponse = await (await fetch(
-                        'http://localhost:30003/exchange',
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                g: g.toString(),
-                                hmacPbk1: hmacPbk1,
-                                p: p.toString(),
-                                pbk1: pbk1.toString(),
-                            } satisfies DHRequest)
+        <div className={ clsx(
+            'p-3',
+        ) }>
+            <div className={ clsx(
+                'w-full flex items-center justify-center',
+            ) }>
+                <button
+                    className={ clsx(
+                        'btn btn-primary ',
+                    ) }
+                    onClick={ async (e) => {
+                        /**
+                         * 向server发送请求,带上所需的数据
+                         * 
+                         * 因为bigint不能被stringify,所以需要手动转成string,并在server端重新转换成bigint
+                         */
+                        const dhResponse = await (await fetch(
+                            'http://localhost:30003/exchange',
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    g: g.toString(),
+                                    hmacPbk1: hmacPbk1,
+                                    p: p.toString(),
+                                    pbk1: pbk1.toString(),
+                                } satisfies DHRequest)
+                            }
+                        )).json() as DHResponse
+
+                        const pbk2 = BigInt(dhResponse.pbk2)
+
+                        const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
+
+                        /**
+                         * 验证HMAC
+                         */
+                        if (hmacPbk2 === dhResponse.hmacPbk2) {
+                            const secret = quickMod(pbk2, pvk1, p).toString()
+                            setHmacPbk2Msg(hmacPbk2)
+                            setSecretMsg(secret)
+                            console.log('HMAC 验证成功,可以确保收到的server的公钥是正确的:', hmacPbk2)
+                            console.log('secret:', secret, '(server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)')
+                        } else {
+                            console.log('HMAC 验证失败!!!')
                         }
-                    )).json() as DHResponse
 
-                    const pbk2 = BigInt(dhResponse.pbk2)
-
-                    const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
-                    if (hmacPbk2 === dhResponse.hmacPbk2) {
-                        const secret = quickMod(pbk2, pvk1, p).toString()
-                        console.log('HMAC 验证成功,可以确保收到的server的公钥是正确的:', hmacPbk2)
-                        console.log('secret:', secret, '(server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)')
-                    } else {
-                        console.log('HMAC 验证失败!!!')
-                    }
-
-                } }
-            >DH Exchange</button>
+                    } }
+                >Diffie-Hellman Exchange</button>
+            </div>
+            {
+                hmacPbk2Msg && (
+                    hmacPbk2Msg === ''
+                        ?
+                        <div className="alert alert-error my-3 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <div>
+                                <h3 className="font-bold text-red-400">HMAC 验证失败!!!</h3>
+                            </div>
+                        </div>
+                        :
+                        <div className="alert alert-success my-3 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <div>
+                                <h3 className="font-bold">HMAC 验证成功,可以确保收到的server的公钥是正确的,HMAC值:</h3>
+                                <div className="text-xs">{ hmacPbk2Msg }</div>
+                            </div>
+                        </div>
+                )
+            }
+            {
+                secretMsg &&
+                <div className="alert alert-info my-3 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <h3 className="font-bold">会话秘钥: (server端应该也生成了一致的会话秘钥,请检查server端的控制台输出)</h3>
+                        <div className="text-xs">{ secretMsg }</div>
+                    </div>
+                </div>
+            }
         </div>
     )
 }

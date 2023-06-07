@@ -1,10 +1,10 @@
 import express from 'express'
 import { generatePrivateKey, quickMod } from './diffie-hellman'
 import CryptoJS from 'crypto-js'
-import Long from 'long'
 import { DHRequest, DHResponse } from './types'
 import cors from 'cors'
 import bodyParser from 'body-parser'
+
 const app = express()
 /**
  * fetch一个不同origin的网址会被浏览器拦下来,需要在server端配置cors
@@ -43,14 +43,29 @@ const port = 30003
  */
 app.post('/exchange', bodyParser.json(), (req, res) => {
     try {
+        /**
+         * 从client接收到的:
+         * 1. client的公钥(带hmac)
+         * 2. g
+         * 3. p
+         */
         const dhRequest = req.body as DHRequest
         const g = BigInt(dhRequest.g)
         const p = BigInt(dhRequest.p)
         const pbk1 = BigInt(dhRequest.pbk1)
 
+        /**
+         * server计算:
+         * 1. server的私钥
+         * 2. server的公钥
+         */
         const pvk2 = generatePrivateKey()
         const pbk2 = quickMod(g, pvk2, p)
-        const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
+
+        /**
+         * 验证HMAC
+         * 如果成功就计算会话秘钥
+         */
         const hmacPbk1 = CryptoJS.HmacSHA256(pbk1.toString(), "Secret Passphrase").toString()
         if (hmacPbk1 === dhRequest.hmacPbk1) {
             const secret = quickMod(pbk1, pvk2, p).toString()
@@ -60,10 +75,15 @@ app.post('/exchange', bodyParser.json(), (req, res) => {
             console.log('HMAC 验证失败!!!')
         }
 
+        /**
+         * 发送 server的公钥(带hmac) 给client
+         */
+        const hmacPbk2 = CryptoJS.HmacSHA256(pbk2.toString(), "Secret Passphrase").toString()
         res.json({
             pbk2: pbk2.toString(),
             hmacPbk2,
         } satisfies DHResponse)
+
     } catch (error) {
         console.error('[ERROR] Request is Invalid!')
         console.log(req.body)
